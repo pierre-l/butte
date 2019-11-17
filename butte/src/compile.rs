@@ -39,6 +39,7 @@ pub fn compile_fbs_generic(
     } else {
         Vec::from(code)
     };
+
     output.write_all(&text_output[..])?;
     Ok(())
 }

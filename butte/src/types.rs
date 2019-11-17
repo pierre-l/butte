@@ -2,6 +2,8 @@
 use derive_more::From;
 use std::{collections::HashMap, iter::FromIterator, path::Path};
 use typed_builder::TypedBuilder;
+use prost_build::{Service, Comments, Method};
+use prost_types::{ServiceOptions, MethodOptions};
 
 /// A Flatbuffer schema
 #[derive(Debug, Clone, PartialEq, From, TypedBuilder)]
@@ -163,6 +165,59 @@ pub struct Rpc<'a> {
 
     #[builder(default)]
     pub doc: Comment<'a>,
+}
+
+impl <'a> Rpc<'a> {
+    pub fn prost_service(&self) -> Service {
+        let methods = self.methods.iter()
+            .map(|method|{
+                let comments = method.doc.lines
+                    .iter().map(|s| s.to_string()).collect();
+
+                let input_type = method.request_type.raw.to_string();
+                let output_type = method.response_type.raw.to_string();
+
+                // TODO Missing values.
+                Method {
+                    name: method.id.raw.to_string(),
+                    proto_name: String::new(),
+                    comments: Comments {
+                        leading_detached: vec![],
+                        leading: comments,
+                        trailing: vec![],
+                    },
+                    input_type,
+                    output_type,
+                    input_proto_type: String::new(),
+                    output_proto_type: String::new(),
+                    options: MethodOptions {
+                        deprecated: None,
+                        idempotency_level: None,
+                        uninterpreted_option: vec![]
+                    },
+                    client_streaming: false,
+                    server_streaming: false,
+                }
+
+            }).collect();
+
+        // TODO Missing values.
+        Service {
+            name: self.id.raw.to_string(),
+            proto_name: String::new(),
+            package: String::new(),
+            comments: Comments {
+                leading_detached: vec![],
+                leading: vec![],
+                trailing: vec![],
+            },
+            methods,
+            options: ServiceOptions {
+                deprecated: None,
+                uninterpreted_option: vec![]
+            },
+        }
+    }
 }
 
 /// A method in an RPC service
